@@ -53,9 +53,8 @@ function onLoadMore() {
     refs.imagesContainer.insertAdjacentHTML('beforeend', imagesElements);
     lightbox.refresh();
 
-    const { height: cardHeight } = document
-      .querySelector('.gallery')
-      .firstElementChild.getBoundingClientRect();
+    const { height: cardHeight } =
+      refs.imagesContainer.firstElementChild.getBoundingClientRect();
 
     window.scrollBy({
       top: cardHeight * 2,
