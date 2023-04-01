@@ -2,6 +2,7 @@ import ImageApiService from './image-service';
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import makeImagesMarkup from './render-gallery';
 
 const refs = {
   searchForm: document.querySelector('#search-form'),
@@ -18,17 +19,18 @@ refs.loadMoreBtn.addEventListener('click', onLoadMore);
 function onSearch(e) {
   e.preventDefault();
 
+  clearImagesContainer();
+  refs.loadMoreBtn.classList.add('is-hidden');
   if (!e.currentTarget.elements.query.value.trim()) {
     return Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
   }
 
-  clearImagesContainer();
   imageApiService.query = e.currentTarget.elements.query.value.trim();
 
   imageApiService.resetPage();
-  imageApiService.fetchArticles().then(images => {
+  imageApiService.getImages().then(images => {
     if (images.hits.length === 0) {
       return Notiflix.Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
@@ -46,10 +48,19 @@ function onSearch(e) {
 
 function onLoadMore() {
   refs.loadMoreBtn.classList.add('is-hidden');
-  imageApiService.fetchArticles().then(images => {
+  imageApiService.getImages().then(images => {
     const imagesElements = images.hits.map(makeImagesMarkup).join('');
     refs.imagesContainer.insertAdjacentHTML('beforeend', imagesElements);
     lightbox.refresh();
+
+    const { height: cardHeight } = document
+      .querySelector('.gallery')
+      .firstElementChild.getBoundingClientRect();
+
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
 
     if (imageApiService.page > imageApiService.pagesQuantity) {
       Notiflix.Notify.failure(
@@ -59,47 +70,6 @@ function onLoadMore() {
       refs.loadMoreBtn.classList.remove('is-hidden');
     }
   });
-}
-
-function makeImagesMarkup({
-  webformatURL,
-  largeImageURL,
-  tags,
-  likes,
-  views,
-  comments,
-  downloads,
-}) {
-  return `<div class="photo-card">
-        <div class="gallery__item">
-          <a class="gallery__link" href="${largeImageURL}">
-            <img
-              class="gallery__image"
-              src="${webformatURL}"
-              alt="${tags}"
-              loading="lazy"
-            />
-          </a>
-        </div>
-        <div class="info">
-          <p class="info-item">
-            <span><b>Likes</b></span>
-            <span>${likes}</span>
-          </p>
-          <p class="info-item">
-            <span><b>Views</b></span>
-            <span>${views}</span>
-          </p>
-          <p class="info-item">
-            <span><b>Comments</b></span>
-            <span>${comments}</span>
-          </p>
-          <p class="info-item">
-            <span><b>Downloads</b></span>
-            <span>${downloads}</span>
-          </p>
-        </div>
-      </div>`;
 }
 
 function clearImagesContainer() {
